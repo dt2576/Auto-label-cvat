@@ -66,16 +66,18 @@ def page_target(url_part='cvat.edufun.ai'):
     raise RuntimeError('Browser page target was not found')
 
 
-def evaluate(expression, url_part='cvat.edufun.ai'):
+def evaluate(expression, url_part='cvat.edufun.ai', timeout=20):
     target = page_target(url_part)
-    socket = websocket.create_connection(target['webSocketDebuggerUrl'], timeout=20)
+    socket = websocket.create_connection(target['webSocketDebuggerUrl'], timeout=timeout)
     try:
         socket.send(json.dumps({'id': 1, 'method': 'Runtime.evaluate', 'params': {'expression': expression, 'returnByValue': True, 'awaitPromise': True}}))
         while True:
             message = json.loads(socket.recv())
             if message.get('id') == 1:
                 if 'exceptionDetails' in message.get('result', {}):
-                    raise RuntimeError(json.dumps(message['result']['exceptionDetails']))
+                    details = message['result']['exceptionDetails']
+                    description = details.get('exception', {}).get('description') or details.get('text', 'Chrome evaluation failed')
+                    raise RuntimeError(description.split('\n', 1)[0])
                 return message['result']['result'].get('value')
     finally:
         socket.close()

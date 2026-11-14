@@ -12,7 +12,7 @@ except ImportError:
 
 def fetch_chunk(job_id, chunk_number=0):
     expression = f"fetch('/api/jobs/{job_id}/data?type=chunk&number={chunk_number}').then(async r=>{{if(!r.ok) throw new Error('HTTP '+r.status); const b=await r.arrayBuffer(); let s=''; const a=new Uint8Array(b); for(let i=0;i<a.length;i+=0x8000) s+=String.fromCharCode(...a.subarray(i,i+0x8000)); return btoa(s)}})"
-    return base64.b64decode(evaluate(expression))
+    return base64.b64decode(evaluate(expression, timeout=90))
 
 
 def save_chunk(job_id, output_dir, chunk_number=0):

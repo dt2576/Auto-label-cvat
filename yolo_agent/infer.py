@@ -1,7 +1,10 @@
 import argparse
 import json
+import os
 from pathlib import Path
 
+os.environ['YOLO_OFFLINE'] = 'true'
+os.environ['YOLO_AUTOINSTALL'] = 'false'
 from ultralytics import YOLO
 
 def polygon_points(segment):

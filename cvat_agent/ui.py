@@ -30,14 +30,51 @@ PHASES = ['Kết nối CVAT', 'Metadata', 'Labels', 'Prompt', 'Frames', 'Inferen
 PAGE = '''<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CVAT Agent</title><style>
 :root{--bg:#212121;--panel:#171717;--card:#2b2b2b;--line:#454545;--text:#ececec;--muted:#a5a5a5;--green:#10a37f;--blue:#5b9cff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui}.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}.side{background:var(--panel);border-right:1px solid #303030;padding:14px;display:flex;flex-direction:column;gap:14px}.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:16px;padding:9px}.mark{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--green),var(--blue))}.side button,.side input,.side select{width:100%;border-radius:8px;padding:10px;background:#222;color:var(--text);border:1px solid #4b4b4b}.side button{cursor:pointer;text-align:left}.side button:hover{background:#333}.config{border-top:1px solid #333;padding-top:14px}.config h4{font-size:11px;color:var(--muted);font-weight:500;margin:0 0 12px}.field{margin:11px 0}.field label{display:block;font-size:12px;color:#bbb;margin-bottom:6px}.side .bottom{margin-top:auto}.main{min-width:0;display:flex;flex-direction:column}.top{height:58px;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between;padding:0 28px}.status{color:#9de4d1}.content{width:min(1000px,100%);margin:auto;padding:30px 24px 190px;flex:1}.welcome{text-align:center;padding:28px 0}.welcome h1{font-size:29px;margin:0 0 8px}.welcome p{color:var(--muted);margin:0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:22px 0}.stat,.card{background:var(--card);border:1px solid #3b3b3b;border-radius:12px}.stat{padding:12px}.stat span{display:block;color:#999;font-size:10px}.stat strong{font-size:19px;display:block;margin-top:6px}.card{padding:18px}.current{font-size:18px;font-weight:600}.progress{height:7px;background:#171717;border-radius:7px;overflow:hidden;margin:14px 0 20px}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--blue));transition:.35s}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.step{min-height:68px;border:1px solid #444;background:#222;border-radius:8px;padding:10px;color:#777}.step b{font-size:11px}.step small{display:block;margin-top:7px;color:#999}.step.done{color:#b9f2df;border-color:#18785f;background:#14382f}.step.active{color:#e8f2ff;border-color:var(--blue);background:#1d3551;animation:pulse 1.5s infinite}.activity{margin-top:14px}.activity summary{color:#aaa;cursor:pointer}.console{height:180px;overflow:auto;white-space:pre-wrap;background:#111;border:1px solid #333;border-radius:8px;margin-top:10px;padding:10px;color:#b8e8c7;font:12px/1.5 Consolas}.composer-wrap{position:fixed;left:280px;right:0;bottom:0;padding:34px 24px 18px;background:linear-gradient(transparent,var(--bg) 25%)}.composer{width:min(1000px,100%);margin:auto;background:#303030;border:1px solid #565656;border-radius:15px;padding:10px;box-shadow:0 10px 35px #0009}.messages{max-height:210px;overflow:auto}.msg{max-width:85%;margin:6px 0;padding:9px 11px;border-radius:10px;line-height:1.4}.msg.user{margin-left:auto;background:#3b3b3b}.msg.agent{background:#17382f;color:#c9f5e8}.row{display:flex;gap:9px;align-items:flex-end}.row textarea{flex:1;min-height:62px;max-height:180px;resize:vertical;background:#151515;color:var(--text);border:1px solid #4c4c4c;border-radius:9px;padding:10px;outline:0}.row textarea:focus{border-color:var(--green)}.send,.reset{border:0;border-radius:8px;padding:11px 14px;color:#fff;font-weight:600}.send{background:var(--green)}.reset{background:#555}.hint{font-size:11px;color:#888;padding:5px}.send:disabled{opacity:.5}@keyframes pulse{50%{box-shadow:0 0 0 4px #5b9cff22}}@media(max-width:850px){.app{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid #333}.composer-wrap{left:0}.steps{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.content{padding:16px 12px 210px}.stats{grid-template-columns:repeat(2,1fr)}.top{padding:0 14px}.composer-wrap{padding:24px 10px 10px}.row{flex-direction:column}.row button{width:100%}}
 </style></head><body><div class="app"><aside class="side"><div class="brand"><span class="mark">A</span>CVAT Agent</div><button id="profile">＋ Mở profile đăng nhập</button><div class="config"><h4>CẤU HÌNH NHIỆM VỤ</h4><div class="field"><label>CVAT job URL</label><input id="url" value="https://cvat.edufun.ai/tasks/56/jobs/130"></div><div class="field"><label>Organization</label><input id="org" value="cohort-5a"></div><div class="field"><label>Kiểu annotation</label><select id="mode"><option value="segmentation">Segmentation polygon</option><option value="bbox">Bounding box</option></select></div><div class="field"><label>Điểm polygon tối đa</label><input id="points" type="number" min="0" max="60" value="60"></div></div><div class="bottom"><button id="resetSide">↻ Bắt đầu lại</button></div></aside><main class="main"><header class="top"><span>Agent workspace</span><span class="status" id="state">Sẵn sàng</span></header><section class="content"><div class="welcome"><h1>Agent có thể giúp gì cho bạn?</h1><p>Dán yêu cầu để Agent chọn label, tạo prompt và chạy CVAT.</p></div><div class="stats"><div class="stat"><span>TASK</span><strong id="task">—</strong></div><div class="stat"><span>JOB</span><strong id="job">—</strong></div><div class="stat"><span>LABEL</span><strong id="labels">—</strong></div><div class="stat"><span>FRAME</span><strong id="frames">—</strong></div></div><section class="card"><div class="current" id="current">Chưa có nhiệm vụ</div><div class="progress"><i id="bar"></i></div><div class="steps" id="steps"></div><details class="activity"><summary>Activity log</summary><pre class="console" id="console">Sẵn sàng.</pre></details></section></section></main></div><div class="composer-wrap"><div class="composer"><div class="messages" id="messages"></div><div class="row"><textarea id="prompt" placeholder="Nhập yêu cầu... Ví dụ: chỉ segment car, traffic light và road"></textarea><button class="send" id="send">Gửi</button><button class="reset" id="reset">↻</button></div><div class="hint">Enter để gửi · Shift+Enter để xuống dòng</div></div></div><script>
-const phases=['Kết nối CVAT','Metadata','Labels','Prompt','Frames','Inference','Kiểm tra','Upload'];const $=id=>document.getElementById(id);let runId;function message(text,role='agent'){const el=document.createElement('div');el.className='msg '+role;el.textContent=text;$('messages').appendChild(el);$('messages').scrollTop=$('messages').scrollHeight}function steps(active,detail){$('steps').innerHTML=phases.map((name,index)=>`<div class="step ${index<active-1?'done':''} ${index===active-1?'active':''}"><b>${String(index+1).padStart(2,'0')} · ${name}</b><small>${index===active-1?(detail||'Đang xử lý...'):index<active-1?'Hoàn tất':''}</small></div>`).join('')}steps(0,'Chờ yêu cầu');async function poll(){const result=await fetch('/api/status?id='+runId).then(r=>r.json());$('console').textContent=result.output||result.error||'Đang khởi động';$('state').textContent=result.state==='running'?'Đang chạy':result.state==='done'?'Hoàn tất':result.state==='error'?'Lỗi':'Sẵn sàng';$('current').textContent=result.phase||'Đang khởi động';$('bar').style.width=(result.progress||0)+'%';steps(result.phase_index||0,result.phase);if(result.task_id)$('task').textContent=result.task_id;if(result.job_id)$('job').textContent=result.job_id;if(result.labels!=null)$('labels').textContent=result.labels;if(result.frame_current!=null)$('frames').textContent=result.frame_current+'/'+(result.frame_total||'?');if(result.state==='running')setTimeout(poll,600)}async function labels(){const response=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Không lấy được label');return result.descriptions}async function submit(){const text=$('prompt').value.trim();if(!text){message('Hãy nhập yêu cầu trước khi gửi.');return}$('send').disabled=true;try{message(text,'user');message('Đang đọc label và tạo mô tả...');const descriptions=await labels();const response=await fetch('/api/chat-filter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,descriptions})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Không lọc được label');const selected=result.selected.map(index=>descriptions[index]);if(!selected.length)throw new Error('Agent không tìm thấy label phù hợp');message(`Đã chọn ${selected.length}/${descriptions.length} label: ${selected.map(item=>item.label).join(', ')}`);const run=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value,organization:$('org').value,model:'sam3',mode:$('mode').value,max_points:$('points').value,selected_prompts:selected})});const data=await run.json();if(!run.ok)throw new Error(data.error||'Không khởi động được job');runId=data.id;poll()}catch(error){message(error.message);$('state').textContent='Lỗi'}finally{$('send').disabled=false}}function reset(){runId=null;$('messages').innerHTML='';$('console').textContent='Sẵn sàng.';$('state').textContent='Sẵn sàng';$('current').textContent='Chưa có nhiệm vụ';$('bar').style.width='0%';$('task').textContent='—';$('job').textContent='—';$('labels').textContent='—';$('frames').textContent='—';steps(0,'Chờ yêu cầu')}$('send').onclick=submit;$('prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}};$('reset').onclick=reset;$('resetSide').onclick=reset;$('profile').onclick=async()=>{const r=await fetch('/api/open-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value})});const data=await r.json();$('state').textContent=data.error||'Đã mở profile'};
+const phases=['Kết nối CVAT','Metadata','Labels','Prompt','Frames','Inference','Kiểm tra','Upload'];const $=id=>document.getElementById(id);let runId;function message(text,role='agent'){const el=document.createElement('div');el.className='msg '+role;el.textContent=text;$('messages').appendChild(el);$('messages').scrollTop=$('messages').scrollHeight}function steps(active,detail){$('steps').innerHTML=phases.map((name,index)=>`<div class="step ${index<active-1?'done':''} ${index===active-1?'active':''}"><b>${String(index+1).padStart(2,'0')} · ${name}</b><small>${index===active-1?(detail||'Đang xử lý...'):index<active-1?'Hoàn tất':''}</small></div>`).join('')}steps(0,'Chờ yêu cầu');async function poll(){const result=await fetch('/api/status?id='+runId).then(r=>r.json());$('console').textContent=result.output||result.error||'Đang khởi động';$('state').textContent=result.state==='running'?'Đang chạy':result.state==='done'?'Hoàn tất':result.state==='error'?'Lỗi':'Sẵn sàng';$('current').textContent=result.phase||'Đang khởi động';$('bar').style.width=(result.progress||0)+'%';steps(result.phase_index||0,result.phase);if(result.task_id)$('task').textContent=result.task_id;if(result.job_id)$('job').textContent=result.job_id;if(result.labels!=null)$('labels').textContent=result.labels;if(result.frame_current!=null)$('frames').textContent=result.frame_current+'/'+(result.frame_total||'?');if(result.state==='running')setTimeout(poll,600)}async function labels(){const response=await fetch('/api/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Không lấy được label');return result.descriptions}async function submit(){const text=$('prompt').value.trim();if(!text){message('Hãy nhập yêu cầu trước khi gửi.');return}$('send').disabled=true;try{message(text,'user');message('Đang đọc label và tạo mô tả...');const descriptions=await labels();const response=await fetch('/api/chat-filter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,descriptions})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Không lọc được label');const selected=result.selected.map(index=>descriptions[index]);if(!selected.length)throw new Error('Agent không tìm thấy label phù hợp');message(`Đã chọn ${selected.length}/${descriptions.length} label: ${selected.map(item=>item.label).join(', ')}`);const run=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value,organization:$('org').value,model:'yolo',mode:$('mode').value,max_points:$('points').value,selected_prompts:selected})});const data=await run.json();if(!run.ok)throw new Error(data.error||'Không khởi động được job');runId=data.id;poll()}catch(error){message(error.message);$('state').textContent='Lỗi'}finally{$('send').disabled=false}}function reset(){runId=null;$('messages').innerHTML='';$('console').textContent='Sẵn sàng.';$('state').textContent='Sẵn sàng';$('current').textContent='Chưa có nhiệm vụ';$('bar').style.width='0%';$('task').textContent='—';$('job').textContent='—';$('labels').textContent='—';$('frames').textContent='—';steps(0,'Chờ yêu cầu')}$('send').onclick=submit;$('prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}};$('reset').onclick=reset;$('resetSide').onclick=reset;$('profile').onclick=async()=>{const r=await fetch('/api/open-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('url').value})});const data=await r.json();$('state').textContent=data.error||'Đã mở profile'};
 </script></body></html>'''
 
 PAGE = PAGE.replace('</details></section></section></main></div><div class="composer-wrap">', '</details></section><section class="chat-row"><div class="messages" id="messages"></div></section></section></main></div><div class="composer-wrap">')
+PAGE = PAGE.replace('Dán yêu cầu để Agent chọn label, tạo prompt và chạy CVAT.', 'YOLO11: nhận diện các lớp COCO như car, person, bus, traffic light. Không hỗ trợ road, sky, lane. Shape cũ của label được xử lý sẽ được thay thế.')
+PAGE = PAGE.replace('<label>Kiểu annotation</label>', '<label>Model</label><select id="model"><option value="yolo">YOLO11</option><option value="sam3">SAM3 · text segmentation</option></select><small id="modelStatus">Đang kiểm tra SAM3...</small></div><div class="field"><label>Kiểu annotation</label>')
+PAGE = PAGE.replace("model:'yolo'", "model:$('model').value")
+PAGE = PAGE.replace('<label>Kiểu annotation</label>', '<label>Confidence SAM3</label><input id="confidence" type="number" min="0.05" max="0.95" step="0.05" value="0.30"><small>Giảm ngưỡng: bắt thêm đối tượng nhưng có thể nhận nhầm.</small></div><div class="field"><label>Kiểu annotation</label>')
+PAGE = PAGE.replace("model:$('model').value,", "model:$('model').value,confidence:Number($('confidence').value),")
+PAGE = PAGE.replace('YOLO11: nhận diện các lớp COCO như car, person, bus, traffic light. Không hỗ trợ road, sky, lane.', 'YOLO11: lớp COCO. SAM3: tìm đối tượng theo mô tả, cần tải trọng số trước. SAM3 mặc định dùng CPU khi GPU dưới 6 GB.')
+PAGE = PAGE.replace("try{message(text,'user');", "try{if($('model').value==='sam3'){const models=await fetch('/api/models').then(r=>r.json());if(!models.sam3.ready)throw new Error('SAM3 chưa có trọng số. Xin quyền tại huggingface.co/facebook/sam3, sau đó chạy download-sam3.cmd.')}message(text,'user');")
+PAGE = PAGE.replace('</script></body></html>', "fetch('/api/models').then(r=>r.json()).then(m=>{$('modelStatus').textContent=m.sam3.ready?'SAM3: đã có trọng số cục bộ':'SAM3: chưa có trọng số · chạy download-sam3.cmd'}).catch(()=>{$('modelStatus').textContent='Không kiểm tra được trạng thái model'});</script></body></html>")
 PAGE = PAGE.replace('<div class="messages" id="messages"></div><div class="row">', '<div class="row">')
 PAGE = PAGE.replace('.content{width:min(1000px,100%);margin:auto;padding:30px 24px 190px;flex:1}', '.content{width:min(1000px,100%);margin:auto;padding:30px 24px 190px;flex:1;display:flex;flex-direction:column;min-height:calc(100vh - 58px)}')
 PAGE = PAGE.replace('.messages{max-height:210px;overflow:auto}', '.chat-row{flex:1;min-height:180px;background:#191919;border:1px solid #383838;border-radius:12px;padding:12px;margin-top:14px;overflow:hidden}.chat-row .messages{height:100%;max-height:none;overflow:auto}.messages{max-height:210px;overflow:auto}')
 PAGE = PAGE.replace('</script></body></html>', "const growPrompt=()=>{const input=document.getElementById('prompt');input.style.height='auto';input.style.height=Math.min(input.scrollHeight,180)+'px';input.style.overflowY=input.scrollHeight>180?'auto':'hidden'};document.getElementById('prompt').addEventListener('input',growPrompt);growPrompt();</script></body></html>")
+
+
+PAGE = PAGE.replace('<label>Kiểu annotation</label>', '''<label>Annotation cũ khi chạy lại</label><select id="annotationPolicy"><option value="keep">Giữ — chỉ thêm label chưa có trên frame</option><option value="append">Thêm — giữ cũ và thêm mới (có thể trùng)</option><option value="replace_selected">Reset — thay nhãn được chọn trong lượt chạy</option></select><small>Giữ là mặc định. Reset giữ nguyên nhãn khác, tags và tracks. Có backup trước upload. Hãy Save trên CVAT trước khi chạy.</small></div><div class="field"><label>Kiểu annotation</label>''')
+PAGE = PAGE.replace("selected_prompts:selected", "selected_prompts:selected,annotation_policy:$('annotationPolicy').value")
+PAGE = PAGE.replace('Shape cũ của label được xử lý sẽ được thay thế.', 'Mặc định giữ annotation cũ; chọn Reset nếu muốn thay nhãn đang chạy.')
+PAGE = PAGE.replace('↻ Bắt đầu lại', '↻ Xóa hội thoại')
+
+
+PAGE = PAGE.replace('<label>Confidence SAM3</label>', '<label>Tốc độ SAM3</label><select id="sam3Speed"><option value="fast">Nhanh — một mô tả / nhãn</option><option value="thorough">Kỹ — nhiều mô tả, giảm bỏ sót</option></select><small>Nhanh có thể bỏ sót thêm đối tượng. Không thay đổi độ phân giải ảnh.</small></div><div class="field"><label>Confidence SAM3</label>')
+PAGE = PAGE.replace("annotation_policy:$('annotationPolicy').value", "annotation_policy:$('annotationPolicy').value,sam3_speed:$('sam3Speed').value")
+
+
+# Keep controls and live status, remove explanatory copy from the workspace.
+PAGE = re.sub(r'<small(?! id="modelStatus")[^>]*>.*?</small>', '', PAGE)
+PAGE = re.sub(r'<div class="hint">.*?</div>', '', PAGE)
+PAGE = re.sub(r'<p>.*?</p>', '', PAGE)
+PAGE = re.sub(r'placeholder="[^"]*"', 'placeholder="Nhập nhãn cần xử lý"', PAGE)
+PAGE = PAGE.replace('<button class="send" id="send">', '<button class="reset" id="pauseRun" disabled>Tạm dừng</button><button class="send" id="send">')
+PAGE = PAGE.replace("let runId;", "let runId=sessionStorage.getItem('activeRun');let runState='idle';")
+PAGE = PAGE.replace("const result=await fetch('/api/status?id='+runId).then(r=>r.json());", "const result=await fetch('/api/status?id='+runId).then(r=>r.json());runState=result.state;const active=['running','pausing','paused'].includes(runState);$('pauseRun').disabled=!active;$('pauseRun').textContent=runState==='paused'||runState==='pausing'?'Tiếp tục':'Tạm dừng';$('send').disabled=active;$('reset').disabled=active;$('resetSide').disabled=active;if(!active)sessionStorage.removeItem('activeRun');")
+PAGE = PAGE.replace("result.state==='running'?'Đang chạy':", "result.state==='paused'?'Đã tạm dừng':result.state==='pausing'?'Đang chờ tạm dừng':result.state==='running'?'Đang chạy':")
+PAGE = PAGE.replace("if(result.state==='running')setTimeout(poll,600)", "if(['running','pausing','paused'].includes(result.state))setTimeout(poll,600)")
+PAGE = PAGE.replace("runId=data.id;poll()", "runId=data.id;sessionStorage.setItem('activeRun',runId);runState='running';poll()")
+PAGE = PAGE.replace("finally{$('send').disabled=false}", "finally{$('send').disabled=['running','pausing','paused'].includes(runState)}")
+PAGE = PAGE.replace('</script></body></html>', """$('pauseRun').onclick=async()=>{if(!runId)return;$('pauseRun').disabled=true;try{const action=runState==='paused'||runState==='pausing'?'resume':'pause';const r=await fetch('/api/'+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:runId})});const data=await r.json();if(!r.ok)throw new Error(data.error);runState=data.state}catch(e){message(e.message)}finally{$('pauseRun').disabled=false}};if(runId)poll();</script></body></html>""")
+
+
+PAGE = PAGE.replace('<option value="segmentation">', '<option value="mask">Mask · SAM3</option><option value="segmentation" selected>')
+PAGE = PAGE.replace('</script></body></html>', "const syncMask=()=>{const mask=$('mode').value==='mask';$('points').disabled=mask;if(mask)$('model').value='sam3'};$('mode').addEventListener('change',syncMask);syncMask();</script></body></html>")
 
 
 def inspect_job(url):
@@ -51,7 +88,7 @@ def inspect_job(url):
     labels = []
     page = 1
     while True:
-        data = evaluate(f"fetch('/api/labels?job_id={job_id}&page={page}').then(r=>r.json())")
+        data = evaluate(f"fetch('/api/labels?job_id={job_id}&page={page}').then(r=>{{if(!r.ok) throw new Error('CVAT HTTP '+r.status+' - hãy kiểm tra đăng nhập'); return r.json()}})")
         labels.extend(item['name'] for item in data.get('results', []))
         if not data.get('next'):
             break
@@ -87,6 +124,12 @@ def read_json_body(handler):
 
 def update(run_id, line):
     job = JOBS[run_id]
+    if line == '[control] paused':
+        job['state'] = 'paused'
+        return
+    if line == '[control] resumed':
+        job['state'] = 'running'
+        return
     match = re.search(r'\[agent (\d+)/(\d+)\] (.*)', line)
     if match:
         index = int(match.group(1))
@@ -103,12 +146,35 @@ def update(run_id, line):
         job['phase'] = f'Inference: frame {frame.group(1)}/{frame.group(2)}'
 
 
+def validate_model(payload):
+    if payload.get('mode') == 'mask' and payload.get('model', 'yolo') != 'sam3':
+        raise ValueError('Xuất mask trực tiếp cần chọn SAM3')
+    if payload.get('sam3_speed', 'thorough') not in {'fast', 'thorough'}:
+        raise ValueError('Tốc độ SAM3 không hợp lệ')
+    if payload.get('annotation_policy', 'keep') not in {'keep', 'append', 'replace_selected'}:
+        raise ValueError('Chế độ annotation cũ không hợp lệ')
+    confidence = float(payload.get('confidence', 0.3))
+    if not 0 < confidence < 1:
+        raise ValueError('Confidence phải lớn hơn 0 và nhỏ hơn 1')
+    model = payload.get('model', 'yolo')
+    if model not in {'yolo', 'sam3'}:
+        raise ValueError('Model phải là yolo hoặc sam3')
+    if model == 'sam3':
+        from .sam3_backend import require_model
+        require_model()
+
+
 def start(payload, run_id):
     JOBS[run_id] = {'state': 'running', 'output': '', 'phase': 'Đang khởi động', 'phase_index': 0, 'progress': 0}
-    command = [sys.executable, '-m', 'cvat_agent.job_runner', payload['url'], payload.get('organization', ''), payload.get('model', 'sam3'), payload.get('mode', 'segmentation'), str(RUNS), str(payload.get('max_points', 60))]
+    command = [sys.executable, '-m', 'cvat_agent.job_runner', payload['url'], payload.get('organization', ''), payload.get('model', 'yolo'), payload.get('mode', 'segmentation'), str(RUNS), str(payload.get('max_points', 60))]
     if payload.get('prompt_file'):
         command.append(payload['prompt_file'])
-    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace')
+    environment = os.environ.copy()
+    environment['SAM3_CONFIDENCE'] = str(payload.get('confidence', 0.3))
+    environment['CVAT_ANNOTATION_POLICY'] = payload.get('annotation_policy', 'keep')
+    environment['SAM3_SPEED'] = payload.get('sam3_speed', 'thorough')
+    environment['CVAT_PAUSE_FILE'] = str(RUNS / f'pause_{run_id}')
+    process = subprocess.Popen(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace', env=environment)
     lines = []
     for line in process.stdout:
         value = line.rstrip()
@@ -116,6 +182,7 @@ def start(payload, run_id):
         update(run_id, value)
         JOBS[run_id]['output'] = '\n'.join(lines[-160:])
     code = process.wait()
+    (RUNS / f'pause_{run_id}').unlink(missing_ok=True)
     JOBS[run_id]['state'] = 'done' if code == 0 else 'error'
     JOBS[run_id]['progress'] = 100 if code == 0 else JOBS[run_id]['progress']
     if code == 0:
@@ -145,6 +212,9 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
         elif self.path == '/api/health':
             self.send_json({'state': 'ready'})
+        elif self.path == '/api/models':
+            from .sam3_backend import model_status
+            self.send_json({'yolo': {'ready': True}, 'sam3': model_status()})
         elif self.path.startswith('/api/status'):
             self.send_json(JOBS.get(self.path.split('id=', 1)[-1], {'state': 'missing'}))
         elif self.path == '/api/agent/schema':
@@ -153,6 +223,26 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({'error': 'Not found'}, 404)
 
     def do_POST(self):
+        if self.path in {'/api/pause', '/api/resume'}:
+            try:
+                payload = read_json_body(self)
+                run_id = payload.get('id', '')
+                job = JOBS.get(run_id)
+                if not job or job['state'] not in {'running', 'pausing', 'paused'}:
+                    self.send_json({'error': 'Không có lượt chạy đang hoạt động'}, 409)
+                    return
+                marker = RUNS / f'pause_{run_id}'
+                if self.path == '/api/pause':
+                    marker.touch()
+                    if job['state'] != 'paused':
+                        job['state'] = 'pausing'
+                else:
+                    marker.unlink(missing_ok=True)
+                    job['state'] = 'running'
+                self.send_json({'state': job['state']})
+            except Exception as error:
+                self.send_json({'error': str(error)}, 400)
+            return
         if self.path == '/api/chat-filter':
             try:
                 payload = read_json_body(self)
@@ -183,6 +273,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             try:
                 payload = read_json_body(self)
+                validate_model(payload)
                 descriptions = inspect_job(payload.get('url', ''))[1]
                 selected = [descriptions[index] for index in filter_labels(payload.get('message', ''), descriptions)]
                 if not selected:
@@ -201,6 +292,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({'error': 'Not found'}, 404)
             return
         payload = read_json_body(self)
+        try:
+            validate_model(payload)
+        except (ValueError, RuntimeError) as error:
+            self.send_json({'error': str(error)}, 400)
+            return
         if not payload.get('url'):
             self.send_json({'error': 'Job URL is required'}, 400)
             return

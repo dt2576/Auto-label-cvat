@@ -79,13 +79,27 @@ def collect_images(job_id, start_frame, count, destination):
     frame = start_frame
     chunk = 0
     while frame < start_frame + count:
-        try:
-            save_chunk(job_id, chunk_root, chunk)
-        except Exception:
-            break
+        for attempt in range(1, 4):
+            try:
+                save_chunk(job_id, chunk_root, chunk)
+                break
+            except Exception as error:
+                if attempt == 3:
+                    raise RuntimeError(
+                        f'Không tải được chunk {chunk} sau 3 lần; đã tải {frame - start_frame}/{count} frame. '
+                        f'Lỗi gốc: {error}'
+                    ) from error
+                print(f'[download] Chunk {chunk}, lần {attempt}/3 thất bại: {error}. Đang thử lại...', flush=True)
+                time.sleep(attempt)
         source = chunk_root / f'job_{job_id}_chunk_{chunk}'
-        for image in sorted(source.glob('*.jpeg')):
-            shutil.copy2(image, images / f'frame_{frame:04d}.jpeg')
+        candidates = [path for path in source.rglob('*') if path.is_file()
+                      and path.suffix.lower() in {'.jpeg', '.jpg', '.png', '.bmp', '.webp', '.tif', '.tiff'}]
+        candidates.sort(key=lambda path: [int(part) if part.isdigit() else part.lower()
+                                         for part in re.split(r'(\d+)', path.relative_to(source).as_posix())])
+        if not candidates:
+            raise RuntimeError(f'Chunk {chunk} không chứa ảnh được hỗ trợ; đã tải {frame - start_frame}/{count} frame')
+        for image in candidates:
+            shutil.copy2(image, images / f'frame_{frame:04d}{image.suffix.lower()}')
             frame += 1
             if frame >= start_frame + count:
                 break
@@ -191,6 +205,8 @@ def container_path(path):
 
 
 def log(step, message):
+    from .run_control import checkpoint
+    checkpoint()
     print(f'[agent {step}] {message}', flush=True)
 
 
@@ -202,6 +218,13 @@ def ensure_ui():
 
 
 def main(url, organization, model, mode, output_root, max_points=80, prompt_file=None):
+    if mode == 'mask' and model != 'sam3':
+        raise ValueError('Xuất mask trực tiếp cần chọn SAM3')
+    if model not in {'yolo', 'sam3'}:
+        raise ValueError('Model must be yolo or sam3')
+    if model == 'sam3':
+        from .sam3_backend import require_model
+        require_model()
     ensure_ui()
     log('1/8', 'Đọc URL job và kết nối Chrome CDP')
     task_id, job_id = parse_job_url(url)
@@ -211,9 +234,7 @@ def main(url, organization, model, mode, output_root, max_points=80, prompt_file
     log('2/8', f'Tải metadata task={task_id}, job={job_id}')
     job = fetch_json(f'/api/jobs/{job_id}')
     meta = fetch_json(f'/api/jobs/{job_id}/data/meta')
-    run_dir = Path(output_root) / f'job_{job_id}'
-    if run_dir.exists():
-        shutil.rmtree(run_dir)
+    run_dir = Path(output_root) / f'job_{job_id}' / f'{model}_{time.time_ns()}'
     run_dir.mkdir(parents=True)
     labels_path = run_dir / 'labels.json'
     log('3/8', 'Lấy toàn bộ label từ CVAT API theo tất cả trang')
@@ -229,22 +250,22 @@ def main(url, organization, model, mode, output_root, max_points=80, prompt_file
     log('5/8', f'Tải {int(job["frame_count"])} frame vào {images}')
     predictions = run_dir / 'predictions'
     predictions.mkdir(parents=True, exist_ok=True)
-    checkpoint = ROOT / 'models' / 'checkpoints' / 'sam3.pt'
-    if model != 'sam3':
-        raise ValueError('Only SAM3 is enabled')
-    if not checkpoint.exists():
-        raise RuntimeError('SAM3 checkpoint is missing at models/checkpoints/sam3.pt')
-    log('6/8', f'Chạy SAM3 mode={mode}, max_points={max_points}')
-    ensure_worker(checkpoint)
-    progress_path = run_dir / 'inference_progress.json'
-    run_worker(images, predictions, int(meta['start_frame']), prompts_path, mode, max_points, progress_path)
-    normalize_predictions(predictions)
+    log('6/8', f'Chạy {model.upper()} mode={mode}, max_points={max_points}')
+    if model == 'sam3':
+        from .sam3_backend import infer_job
+        supported_labels = infer_job(images, predictions, descriptions, mode, max_points)
+    else:
+        from .yolo_infer import infer_job
+        supported_labels = infer_job(images, predictions, labels, mode, max_points)
     summary = prediction_summary(predictions, labels)
     log('7/8', f"Hậu kiểm {summary['shapes']} shape, {summary['found_labels']}/{len(labels)} label")
     if summary['missing_labels']:
         log('7/8', 'Label chưa có mask: ' + ', '.join(summary['missing_labels']))
-    log('8/8', 'Mở khóa, hiển thị label, xóa annotation cũ và upload vào CVAT')
-    run([sys.executable, 'cvat_agent/annotate_batch.py', str(job_id), str(predictions), organization])
+    policy = os.environ.get('CVAT_ANNOTATION_POLICY', 'keep')
+    log('8/8', f'Upload vào CVAT, annotation_policy={policy}')
+    from .annotate_batch import apply
+    upload = apply(job_id, predictions, organization, supported_labels, annotation_policy=policy)
+    log('8/8', f"Thêm {upload['added_shapes']}, xóa {upload['cleared_shapes']}, bỏ qua {upload['skipped_shapes']} shape. Backup: {upload['backup']}")
     return {'task_id': task_id, 'job_id': job_id, 'frames': int(job['frame_count']), 'model': model, 'mode': mode, **summary}
 
 

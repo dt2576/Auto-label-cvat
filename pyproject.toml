@@ -9,5 +9,8 @@ description = "Standalone YOLO11 detection and segmentation agent"
 requires-python = ">=3.10"
 dependencies = ["ultralytics>=8.3.0", "opencv-python>=4.10.0", "numpy>=1.26.0", "websocket-client>=1.8"]
 
+[project.optional-dependencies]
+sam3 = ["transformers>=5.22.2,<6", "accelerate>=1.15.0,<2"]
+
 [tool.setuptools]
-packages = ["yolo_agent"]
+packages = ["yolo_agent", "cvat_agent"]
