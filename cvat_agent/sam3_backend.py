@@ -48,7 +48,18 @@ def download_model():
 
 def prompt_variants(description):
     label = description['label'].strip().lower().replace('_', ' ')
+    if label.startswith('lane/'):
+        name = label.split('/', 1)[1]
+        if name == 'crosswalk':
+            return ['individual painted crosswalk stripes']
+        if name == 'road curb':
+            return ['road curb']
+        return [name.replace('other', '') + ' painted lane markings']
     aliases = {
+        'area/direct': ['drivable road in the current lane ahead of the camera',
+                        'the directly drivable road area'],
+        'area/alternative': ['adjacent drivable lane going in the same direction',
+                             'alternative drivable road area beside the current lane'],
         'bus': ['bus', 'city bus', 'coach'],
         'road': ['road', 'road surface', 'street'],
         'vegetation': ['vegetation', 'trees', 'bushes and plants'],
@@ -77,16 +88,26 @@ def mask_polygons(mask, max_points):
     for contour in sorted(contours, key=cv2.contourArea, reverse=True):
         if cv2.contourArea(contour) < 1 or len(contour) < 3:
             continue
+        # Choose the smallest approximation error that satisfies the point cap.
+        # Uniform vertex sampling can cut corners and destroy narrow features.
         polygon = contour
-        epsilon = 0.001
-        perimeter = cv2.arcLength(contour, True)
-        while max_points and len(polygon) > max_points and epsilon <= 1:
-            polygon = cv2.approxPolyDP(contour, epsilon * perimeter, True)
-            epsilon *= 1.5
-        if len(polygon) < 3:
-            polygon = contour
-        if max_points and len(polygon) > max_points:
-            polygon = polygon[np.linspace(0, len(polygon) - 1, max_points, dtype=int)]
+        if max_points and len(contour) > max_points:
+            low, high = 0.0, cv2.arcLength(contour, True)
+            best = None
+            for _ in range(28):
+                epsilon = (low + high) / 2
+                candidate = cv2.approxPolyDP(contour, epsilon, True)
+                if len(candidate) > max_points:
+                    low = epsilon
+                else:
+                    high = epsilon
+                    if len(candidate) >= 3 and cv2.contourArea(candidate) > 0:
+                        best = candidate
+            if best is not None:
+                polygon = best
+            else:
+                # Preserve the contour rather than produce a degenerate polygon.
+                print('[sam3] Không thể giảm điểm mà vẫn giữ polygon hợp lệ; giữ đường bao gốc.', flush=True)
         if cv2.contourArea(polygon) > 0:
             polygons.append(polygon.reshape(-1).astype(float).tolist())
     return polygons
@@ -137,6 +158,11 @@ def convert_result(result, label, mode, max_points):
     for index, score in enumerate(result['scores']):
         if mode == 'bbox':
             points = result['boxes'][index].detach().float().cpu().tolist()
+        elif mode == 'polyline':
+            from .polyline import mask_polylines
+            for points in mask_polylines(result['masks'][index].detach().cpu().numpy(), max_points):
+                items.append({'type': 'polyline', 'label': label, 'confidence': float(score), 'points': points})
+            continue
         elif mode == 'mask':
             from .mask_format import encode_mask
             points = encode_mask(result['masks'][index].detach().cpu().numpy())
@@ -154,10 +180,15 @@ def convert_result(result, label, mode, max_points):
 
 def infer_job(images, output, descriptions, mode, max_points=60):
     directory = require_model()
-    if mode not in {'bbox', 'segmentation', 'mask'}:
+    if mode not in {'bbox', 'segmentation', 'mask', 'polyline'}:
         raise ValueError('Mode must be bbox, segmentation or mask')
     if mode == 'segmentation' and max_points and max_points < 3:
         raise ValueError('SAM3 polygon cần ít nhất 3 điểm, hoặc 0 để không giới hạn')
+    if mode == 'polyline':
+        if any(not item['label'].startswith('lane/') for item in descriptions):
+            raise ValueError('Chế độ polyline chỉ nhận các nhãn lane/...')
+        if max_points and max_points < 2:
+            raise ValueError('Polyline cần ít nhất 2 điểm hoặc 0')
     confidence = float(os.environ.get('SAM3_CONFIDENCE', '0.3'))
     if not 0 < confidence < 1:
         raise ValueError('SAM3 confidence phải lớn hơn 0 và nhỏ hơn 1')

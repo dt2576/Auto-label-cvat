@@ -218,8 +218,8 @@ def ensure_ui():
 
 
 def main(url, organization, model, mode, output_root, max_points=80, prompt_file=None):
-    if mode == 'mask' and model != 'sam3':
-        raise ValueError('Xuất mask trực tiếp cần chọn SAM3')
+    if mode in {'mask', 'polyline'} and model != 'sam3':
+        raise ValueError('Mask/Polyline cần chọn SAM3')
     if model not in {'yolo', 'sam3'}:
         raise ValueError('Model must be yolo or sam3')
     if model == 'sam3':

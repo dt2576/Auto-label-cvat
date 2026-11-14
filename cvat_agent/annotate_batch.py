@@ -46,10 +46,12 @@ def apply(job_id, prediction_dir, organization, selected_labels=None, preserve_e
     added = 0
     for frame, items in predictions.items():
         for item in items:
+            if selected_labels is not None and item['label'] not in selected_labels:
+                raise ValueError(f"Prediction outside selected labels: {item['label']}")
             label_id = labels.get(item['label'])
             shape_type = item.get('type')
             points = item.get('points', [])
-            if label_id is None or shape_type not in {'rectangle', 'polygon', 'mask'}:
+            if label_id is None or shape_type not in {'rectangle', 'polygon', 'mask', 'polyline'}:
                 continue
             if shape_type == 'mask':
                 from .mask_format import validate_mask

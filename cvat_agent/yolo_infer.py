@@ -8,15 +8,21 @@ os.environ['YOLO_AUTOINSTALL'] = 'false'
 
 
 def label_mapping(names, labels):
-    available = {label.lower().replace('_', ' '): label for label in labels}
+    exact = {label.lower(): label for label in labels}
+    available = {}
+    for label in labels:
+        available.setdefault(label.lower().replace('_', ' '), []).append(label)
     mapping = {}
     for index, name in names.items():
         candidates = [name]
         if name == 'person':
             candidates.append('pedestrian')
         for candidate in candidates:
-            if candidate in available:
-                mapping[index] = available[candidate]
+            if candidate in exact:
+                mapping[index] = exact[candidate]
+                break
+            if len(available.get(candidate, [])) == 1:
+                mapping[index] = available[candidate][0]
                 break
     return mapping
 

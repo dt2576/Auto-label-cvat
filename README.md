@@ -90,3 +90,11 @@ Save thay đổi trên CVAT trước khi chạy. Mỗi upload lưu backup JSON t
 ### Xuất mask trực tiếp
 
 Chọn SAM3 và kiểu annotation **Mask · SAM3** để gửi mask RLE trực tiếp lên CVAT, không qua polygon. Chế độ này giữ lỗ và các vùng rời rạc trong mask; không dùng giới hạn điểm polygon. Giữ/Thêm/Reset và Tạm dừng/Tiếp tục vẫn áp dụng. Muốn thay polygon cũ cùng nhãn bằng mask, chọn Reset cho nhãn cần chuyển. Mask chưa tự loại bỏ chồng lấn giữa các nhãn semantic; cần review trên CVAT. Định dạng đối chiếu với cvat-sdk/cvat_sdk/masks.py của CVAT.
+
+### Polyline cho lane
+
+Chọn SAM3 → Polyline · SAM3 và chỉ nhập nhãn lane/.... Tool tạo mask rồi lấy đường tim, tách nhánh và các vùng rời rạc, xuất shape polyline lên CVAT. Giới hạn điểm chia đường dài thành các đoạn nối tiếp thay vì cắt góc. Chức năng tạo nhãn sơ bộ: cần review phân loại vạch đơn/đôi, màu vạch, crosswalk và road curb. Mask dự đoán sai hoặc nối liền hai vạch có thể tạo đường tim sai. Không tự đổi bbox hoặc polygon cũ; dùng Giữ/Thêm/Reset theo nhu cầu.
+
+### Hủy lượt chạy
+
+Nút Hủy lượt chạy dừng tiến trình xử lý, kể cả khi đang tạm dừng. Kết quả đã lưu trong runs vẫn còn. Hủy không hoàn tác annotation nếu yêu cầu upload đã được gửi tới CVAT; kiểm tra job và backup nếu cần. Lượt bị hủy không có chức năng tiếp tục; hãy tạo lượt mới.
